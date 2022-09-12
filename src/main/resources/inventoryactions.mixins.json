@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "com.highfox.inventoryactions.mixin",
+	"compatibilityLevel": "JAVA_16",
+	"refmap": "inventoryactions.refmap.json",
+	"mixins": [
+		"MixinItem"
+	],
+	"client": [
+		
+	],
+	"minVersion": "0.8"
+}

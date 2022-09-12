@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="[37,)"
+license="All rights reserved"
+showAsResourcePack=false
+
+[[mods]]
+    modId="inventoryactions"
+    version="1.1.0"
+    displayName="Inventory Actions"
+    displayURL="https://www.curseforge.com/minecraft/mc-mods/easy-cutting"
+    #logoFile="logo.png"
+    authors="HighFox"
+    description='''
+    Allows various interactions between blocks and items to be performed within the inventory.
+    '''
+
+[[dependencies.inventoryactions]]
+    modId="forge"
+    mandatory=true
+    versionRange="[37,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.inventoryactions]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.17.1]"
+    ordering="NONE"
+    side="BOTH"

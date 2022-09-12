@@ -17,7 +17,7 @@ import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.GuiContainerEvent;
+import net.minecraftforge.client.event.ContainerScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
@@ -25,8 +25,8 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 public class ClientHooks {
 
 	@SubscribeEvent
-	public static void drawGuiBackground(GuiContainerEvent.DrawBackground event) {
-		AbstractContainerScreen screen = event.getGuiContainer();
+	public static void drawGuiBackground(ContainerScreenEvent.DrawBackground event) {
+		AbstractContainerScreen<?> screen = event.getContainerScreen();
 		Minecraft minecraft = Minecraft.getInstance();
 		List<Slot> slots = screen.getMenu().slots;
 		ItemStack carriedStack = screen.getMenu().getCarried();
@@ -42,7 +42,7 @@ public class ClientHooks {
 					float textScale = 0.65F;
 					FormattedCharSequence s = FormattedCharSequence.forward("+", Style.EMPTY.withColor(ChatFormatting.WHITE));
 
-					PoseStack stack = event.getMatrixStack();
+					PoseStack stack = event.getPoseStack();
 					RenderSystem.enableDepthTest();
 					stack.pushPose();
 					stack.translate((double)screen.getGuiLeft(), (double)screen.getGuiTop(), 0.0D);

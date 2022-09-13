@@ -8,7 +8,7 @@ showAsResourcePack=false
     version="1.0.0"
     displayName="Inventory Actions"
     displayURL="https://www.curseforge.com/minecraft/mc-mods/inventory-actions"
-    #logoFile="logo.png"
+    logoFile="logo.png"
     authors="HighFox"
     description='''
     Allows various interactions between blocks and items to be performed within the inventory.

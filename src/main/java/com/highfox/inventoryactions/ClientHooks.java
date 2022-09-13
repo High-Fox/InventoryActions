@@ -25,7 +25,7 @@ import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 public class ClientHooks {
 
 	@SubscribeEvent
-	public static void drawGuiBackground(ContainerScreenEvent.DrawBackground event) {
+	public static void drawGuiBackground(ContainerScreenEvent.Render.Background event) {
 		AbstractContainerScreen<?> screen = event.getContainerScreen();
 		Minecraft minecraft = Minecraft.getInstance();
 		List<Slot> slots = screen.getMenu().slots;

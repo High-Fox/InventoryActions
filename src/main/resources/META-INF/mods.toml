@@ -1,11 +1,12 @@
 modLoader="javafml"
 loaderVersion="[37,)"
+issueTrackerURL="https://github.com/High-Fox/InventoryActions/issues"
 license="All rights reserved"
 showAsResourcePack=false
 
 [[mods]]
     modId="inventoryactions"
-    version="1.0.0"
+    version="${file.jarVersion}"
     displayName="Inventory Actions"
     displayURL="https://www.curseforge.com/minecraft/mc-mods/inventory-actions"
     logoFile="logo.png"

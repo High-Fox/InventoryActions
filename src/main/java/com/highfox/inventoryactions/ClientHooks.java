@@ -2,7 +2,7 @@ package com.highfox.inventoryactions;
 
 import java.util.List;
 
-import com.highfox.inventoryactions.util.ActionHandler;
+import com.highfox.inventoryactions.action.ActionHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ContainerScreenEvent;
@@ -31,12 +32,12 @@ public class ClientHooks {
 		List<Slot> slots = screen.getMenu().slots;
 		ItemStack carriedStack = screen.getMenu().getCarried();
 
-		if (!(screen instanceof CreativeModeInventoryScreen) && minecraft.player != null && !carriedStack.isEmpty() && ActionConfig.displayIconForValidActions.get()) {
+		if (ActionConfig.displayIconForValidActions.get() && minecraft.player != null && (!(screen instanceof CreativeModeInventoryScreen) || ((CreativeModeInventoryScreen)screen).getSelectedTab() == CreativeModeTab.TAB_INVENTORY.getId())) {
 			for (int i = 0; i < slots.size(); i++) {
 				Slot slot = slots.get(i);
 				ItemStack targetStack = slot.getItem();
 
-				if (!targetStack.isEmpty() && ActionHandler.canPerformAnyAction(targetStack, carriedStack, slot, minecraft.player)) {
+				if (!targetStack.isEmpty() && !carriedStack.isEmpty() && ActionHandler.canPerformAnyAction(targetStack, carriedStack, slot, minecraft.player)) {
 					int x = slot.x;
 					int y = slot.y;
 					float textScale = 0.65F;

@@ -1,29 +1,32 @@
 buildscript {
     repositories {
         maven { url = 'https://maven.minecraftforge.net' }
-        mavenCentral()
         maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven { url = 'https://maven.parchmentmc.org' }
+        mavenCentral()
     }
     dependencies {
         classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath 'org.parchmentmc:librarian:1.+'
         classpath group: 'org.spongepowered', name: 'mixingradle', version: '0.7-SNAPSHOT'
     }
 }
 apply plugin: 'net.minecraftforge.gradle'
 // Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
-apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
+apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'maven-publish'
 
-version = '1.19.2-1.0'
-group = 'com.highfox.inventoryactions'
-archivesBaseName = 'inventoryactions'
+version = project.mc_version + '-' + project.mod_version
+group = 'highfox.' + project.mod_id
+archivesBaseName = project.mod_id
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(project.java_version)
 
 println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 minecraft {
-    mappings channel: 'official', version: '1.19.2'
+    mappings channel: 'parchment', version: '2022.10.16-1.19.2'
 
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
@@ -52,6 +55,20 @@ minecraft {
                 }
             }
         }
+        
+        data {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'inventoryactions', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            mods {
+                inventoryactions {
+                    source sourceSets.main
+                }
+            }
+        }
     }
 }
 
@@ -66,23 +83,24 @@ repositories {
 }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.19.2-43.1.25'
+    minecraft 'net.minecraftforge:forge:' + project.mc_version + '-' + project.forge_version
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 
 jar {
     manifest {
         attributes([
-                "Specification-Title"     : "inventoryactions",
+                "Specification-Title"     : project.mod_id,
                 "Specification-Vendor"    : "highfox",
                 "Specification-Version"   : "1",
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.jar.archiveVersion,
+                "Implementation-Title"    : project.mod_id,
+                "Implementation-Version"  : version,
                 "Implementation-Vendor"   : "highfox",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 }
+
 jar.finalizedBy('reobfJar')
 
 publishing {
@@ -96,4 +114,8 @@ publishing {
             url "file://${project.projectDir}/mcmodsrepo"
         }
     }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }

@@ -1,0 +1,125 @@
+{
+	"_comment": "Simulates breaking a diamond ore block with a pickaxe, also taking into account fortune levels",
+	
+	"conditions": [
+		{
+			"_comment": "Checks if the item clicked is contained in the diamond_ores tag",
+			
+			"type": "inventoryactions:item_tag",
+			"source": "action_target",
+			"tags": [
+				"minecraft:diamond_ores"
+			]
+		},
+		{
+			"_comment": "Checks if the held item is in the pickaxes tag",
+			
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:tools/pickaxes"
+			]
+		},
+		{
+			"_comment": "Checks if the pickaxe is capable of mining diamond ore (at least iron tier)",
+			
+			"type": "inventoryactions:item_tier",
+			"source": "action_using",
+			"tier": {
+				"minimum": "iron"
+			}
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:damage_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"_comment": "Gives between 3 and 7 experience points to the player",
+			
+			"type": "inventoryactions:give_xp",
+			"amount": {
+				"type": "minecraft:uniform",
+				"min": 3,
+				"max": 7
+			}
+		},
+		{
+			"_comment": "Gives either the regular or deepslate diamond ore loot table results and plays the corresponding breaking sound depending on which type of diamond ore the target is",
+			
+			"type": "inventoryactions:alternatives",
+			"entries": [
+				{
+					"conditions": [
+						{
+							"type": "inventoryactions:item",
+							"source": "action_target",
+							"items": [
+								"minecraft:diamond_ore"
+							]
+						}
+					],
+					"functions": [
+						{
+							"type": "inventoryactions:give_items",
+							"items": [
+								{
+									"_comment": "Gets items from the diamond_ore loot table. The tool param is given so that fortune/silk touch are taken into account",
+									
+									"type": "inventoryactions:loot_table",
+									"loot_table": "blocks/diamond_ore",
+									"tool": "action_using"
+								}
+							]
+						},
+						{
+							"type": "inventoryactions:play_sound",
+							"sound": "minecraft:block.stone.break",
+							"category": "block",
+							"volume": 0.5
+						}
+					]
+				},
+				{
+					"conditions": [
+						{
+							"type": "inventoryactions:item",
+							"source": "action_target",
+							"items": [
+								"minecraft:deepslate_diamond_ore"
+							]
+						}
+					],
+					"functions": [
+						{
+							"type": "inventoryactions:give_items",
+							"items": [
+								{
+									"_comment": "Gets items from the deepslate diamond_ore loot table. Tool param also given",
+									
+									"type": "inventoryactions:loot_table",
+									"loot_table": "blocks/deepslate_diamond_ore",
+									"tool": "action_using"
+								}
+							]
+						},
+						{
+							"type": "inventoryactions:play_sound",
+							"sound": "minecraft:block.deepslate.break",
+							"category": "block",
+							"volume": 0.5
+						}
+					]
+				}
+			]
+		}
+	]
+}

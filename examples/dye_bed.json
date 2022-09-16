@@ -1,0 +1,49 @@
+{
+	"_comment": "Dyes white beds",
+
+	"conditions": [
+		{
+			"_comment": "Checks if the clicked item is a white (undyed) bed",
+			
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:white_bed"
+			]
+		},
+		{
+			"_comment": "Checks if the held item is in the dyes tag",
+			
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:dyes"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"_comment": "Simulates and gives the result of crafting the dye and bed together",
+			
+			"type": "inventoryactions:crafting",
+			"pattern": [
+				"DB"
+			],
+			"key": {
+				"D": "action_using",
+				"B": "action_target"
+			}
+		}
+	]
+}

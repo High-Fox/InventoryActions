@@ -1,0 +1,5 @@
+{
+	"inventoryactions.configScreen.title": "Inventory Actions Config",
+	"inventoryactions.configScreen.enableActionIcons": "Show valid action icons",
+	"inventoryactions.configScreen.enableActionIcons.tooltip": "Display a small marker where valid inventory actions can be performed"
+}

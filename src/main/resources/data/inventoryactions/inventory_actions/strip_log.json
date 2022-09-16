@@ -1,0 +1,44 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:tools/axes"
+			]
+		},
+		{
+			"type": "inventoryactions:item_map",
+			"source": "action_target",
+			"item_map": "inventoryactions:strippables"
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:damage_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:mapped",
+					"source": "action_target",
+					"item_map": "strippables"
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "item.axe.strip",
+			"category": "block"
+		}
+	]
+}

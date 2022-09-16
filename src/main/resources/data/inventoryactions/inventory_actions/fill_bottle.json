@@ -1,0 +1,46 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:water_bucket"
+			]
+		},
+		{
+			"type": "inventoryactions:item",
+			"source": "action_using",
+			"items": [
+				"minecraft:glass_bottle"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:simple",
+					"item": "minecraft:potion",
+					"functions": [
+						{
+							"function": "minecraft:set_potion",
+							"id": "minecraft:water"
+						}
+					]
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "item.bottle.fill",
+			"category": "player"
+		}
+	]
+}

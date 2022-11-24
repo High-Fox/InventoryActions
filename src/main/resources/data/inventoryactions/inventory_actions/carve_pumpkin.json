@@ -1,0 +1,55 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:pumpkin"
+			]
+		},
+		{
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:shears"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:damage_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:simple",
+					"item": "minecraft:carved_pumpkin"
+				},
+				{
+					"type": "inventoryactions:simple",
+					"item": "minecraft:pumpkin_seeds",
+					"functions": [
+						{
+							"function": "minecraft:set_count",
+							"count": 4
+						}
+					]
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "block.pumpkin.carve",
+			"category": "block"
+		}
+	]
+}

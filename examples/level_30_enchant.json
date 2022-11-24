@@ -1,0 +1,118 @@
+{
+	"_comment": "Performs a level 30 enchant on an item if  3 lapis lazuli is in the player's offhand and they have at least 30 levels",
+	
+	"conditions": [
+		{
+			"_comment": "Checks that the target item is an enchanting table",
+			
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:enchanting_table"
+			]
+		},
+		{
+			"_comment": "Checks if the held item is a tool, armor piece or book. If it is a book, it also checks that there is only 1",
+			
+			"type": "inventoryactions:or",
+			"conditions": [
+				{
+					"type": "inventoryactions:item_tag",
+					"source": "action_using",
+					"tags": [
+						"forge:armors",
+						"forge:tools"
+					]
+				},
+				{
+					"type": "inventoryactions:and",
+					"conditions": [
+						{
+							"type": "inventoryactions:item",
+							"source": "action_using",
+							"items": [
+								"minecraft:book"
+							]
+						},
+						{
+							"type": "inventoryactions:item_nbt",
+							"source": "action_using",
+							"nbt": {
+								"Count": 1
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"_comment": "Checks if the player is holding lapis in their offhand",
+			
+			"type": "inventoryactions:item",
+			"source": "player.weapon.offhand",
+			"items": [
+				"minecraft:lapis_lazuli"
+			]
+		},
+		{
+			"_comment": "Checks that there is at least 3 or more lapis",
+			
+			"type": "inventoryactions:item_nbt",
+			"source": "player.weapon.offhand",
+			"nbt": {
+				"Count": ">3"
+			}
+		},
+		{
+			"_comment": "Checks if the player has at least 30 experience levels",
+			
+			"type": "inventoryactions:player",
+			"experience_level": {
+				"minimum": 30
+			}
+		},
+		{
+			"_comment": "Checks that the item is not already enchanted",
+			
+			"type": "inventoryactions:item_nbt",
+			"source": "action_using",
+			"nbt": {
+				"Enchantments": []
+			}
+		}
+	],
+	
+	"functions": [
+		{
+			"_comment": "Apply a random 30 level enchant modifier to the held item",
+			
+			"type": "inventoryactions:apply_modifiers",
+			"source": "action_using",
+			"functions": [
+				{
+					"function": "minecraft:enchant_with_levels",
+					"levels": 30
+				}
+			]
+		},
+		{
+			"_comment": "Remove 3 lapis from the player",
+			
+			"type": "inventoryactions:shrink_item",
+			"source": "player.weapon.offhand",
+			"amount": 3
+		},
+		{
+			"_comment": "Remove 3 levels from the player",
+			
+			"type": "inventoryactions:give_xp",
+			"amount": -3,
+			"add_levels": true
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "minecraft:block.enchantment_table.use",
+			"category": "block"
+		}
+	]
+}

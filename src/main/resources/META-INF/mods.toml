@@ -17,13 +17,13 @@ license="MIT License"
 [[dependencies.inventoryactions]]
     modId="forge"
     mandatory=true
-    versionRange="[43,)"
+    versionRange="[41,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.inventoryactions]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19.2]"
+    versionRange="[1.19]"
     ordering="NONE"
     side="BOTH"

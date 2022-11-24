@@ -20,7 +20,6 @@ import net.minecraft.world.item.HoneycombItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.WeatheringCopper;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class DefaultItemMaps {
 	public static final Supplier<BiMap<ResourceLocation, ItemMap>> MAPS_BY_NAME = Suppliers.memoize(() -> Util.make(ImmutableBiMap.<ResourceLocation, ItemMap>builder(), builder -> {
@@ -66,7 +65,7 @@ public class DefaultItemMaps {
 	}
 
 	private static Holder<Item> itemHolderFromBlock(Block block) {
-		return ForgeRegistries.ITEMS.getDelegate(block.asItem()).orElseThrow();
+		return block.asItem().builtInRegistryHolder();
 	}
 
 }

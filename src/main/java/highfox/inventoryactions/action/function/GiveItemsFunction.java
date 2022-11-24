@@ -50,7 +50,7 @@ public class GiveItemsFunction implements IActionFunction {
 				player.containerMenu.setCarried(stack);
 			}
 		} else if (!player.addItem(stack)) {
-			if (player.hasContainerOpen()) {
+			if (player.containerMenu != player.inventoryMenu) {
 				player.containerMenu.broadcastChanges();
 			} else {
 				player.inventoryMenu.broadcastChanges();

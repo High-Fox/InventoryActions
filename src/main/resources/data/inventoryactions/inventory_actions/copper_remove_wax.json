@@ -1,0 +1,42 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:tool",
+			"source": "action_using",
+			"tool": "axe"
+		},
+		{
+			"type": "inventoryactions:item_map",
+			"source": "action_target",
+			"item_map": "inventoryactions:wax_off"
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:damage_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:mapped",
+					"source": "action_target",
+					"item_map": "inventoryactions:wax_off"
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "minecraft:item.axe.wax_off",
+			"category": "block"
+		}
+	]
+}

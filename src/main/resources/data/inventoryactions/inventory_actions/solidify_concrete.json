@@ -1,0 +1,56 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item",
+			"source": "action_using",
+			"path": "_concrete_powder$"
+		},
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:water_bucket"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:mapped",
+					"source": "action_using",
+					"item_map": {
+						"minecraft:red_concrete_powder": "minecraft:red_concrete",
+						"minecraft:orange_concrete_powder": "minecraft:orange_concrete",
+						"minecraft:yellow_concrete_powder": "minecraft:yellow_concrete",
+						"minecraft:lime_concrete_powder": "minecraft:lime_concrete",
+						"minecraft:green_concrete_powder": "minecraft:green_concrete",
+						"minecraft:cyan_concrete_powder": "minecraft:cyan_concrete",
+						"minecraft:light_blue_concrete_powder": "minecraft:light_blue_concrete",
+						"minecraft:blue_concrete_powder": "minecraft:blue_concrete",
+						"minecraft:purple_concrete_powder": "minecraft:purple_concrete",
+						"minecraft:magenta_concrete_powder": "minecraft:magenta_concrete",
+						"minecraft:pink_concrete_powder": "minecraft:pink_concrete",
+						"minecraft:white_concrete_powder": "minecraft:white_concrete",
+						"minecraft:light_gray_concrete_powder": "minecraft:light_gray_concrete",
+						"minecraft:gray_concrete_powder": "minecraft:gray_concrete",
+						"minecraft:black_concrete_powder": "minecraft:black_concrete",
+						"minecraft:brown_concrete_powder": "minecraft:brown_concrete"
+					}
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "inventoryactions:solidify_concrete",
+			"category": "block"
+		}
+	]
+}

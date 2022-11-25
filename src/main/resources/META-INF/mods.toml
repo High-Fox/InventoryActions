@@ -1,8 +1,7 @@
 modLoader="javafml"
 loaderVersion="[40,)"
 issueTrackerURL="https://github.com/High-Fox/InventoryActions/issues"
-license="All rights reserved"
-showAsResourcePack=false
+license="MIT License"
 
 [[mods]]
     modId="inventoryactions"

@@ -1,0 +1,56 @@
+{
+	"_comment": "Crafts stained glass by right clicking at least 8 glass with a dye",
+	
+	"conditions": [
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:glass"
+			]
+		},
+		{
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:dyes"
+			]
+		},
+		{
+			"_comment": "Checks that there is at least 8 glass",
+			
+			"type": "inventoryactions:item_nbt",
+			"source": "action_target",
+			"nbt": {
+				"Count": ">8"
+			}
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 8
+		},
+		{
+			"_comment": "Gives the results of crafting the glass and dye together",
+			
+			"type": "inventoryactions:crafting",
+			"pattern": [
+				"GGG",
+				"GDG",
+				"GGG"
+			],
+			"key": {
+				"G": "action_target",
+				"D": "action_using"
+			}
+		}
+	]
+}

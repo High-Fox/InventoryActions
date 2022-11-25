@@ -1,0 +1,51 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:minecart"
+			]
+		},
+		{
+			"type": "inventoryactions:item",
+			"source": "action_using",
+			"items": [
+				"minecraft:furnace",
+				"minecraft:chest",
+				"minecraft:hopper",
+				"minecraft:command_block",
+				"minecraft:tnt"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:crafting",
+			"pattern": [
+				"I",
+				"M"
+			],
+			"key": {
+				"I": "action_using",
+				"M": "action_target"
+			}
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "entity.item_frame.add_item",
+			"category": "player"
+		}
+	]
+}

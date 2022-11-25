@@ -1,8 +1,8 @@
 {
     "pack": {
-        "description": "inventoryactions resources",
+        "description": "Inventory Actions resources",
         "pack_format": 9,
-        "forge:resource_pack_format": 8,
+        "forge:resource_pack_format": 9,
         "forge:data_pack_format": 9
     }
 }

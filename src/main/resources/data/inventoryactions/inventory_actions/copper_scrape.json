@@ -1,0 +1,37 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:tool",
+			"source": "action_using",
+			"tool": "axe"
+		},
+		{
+			"type": "inventoryactions:item_map",
+			"source": "action_target",
+			"item_map": "inventoryactions:oxidization_remove"
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:give_items",
+			"items": [
+				{
+					"type": "inventoryactions:mapped",
+					"source": "action_target",
+					"item_map": "inventoryactions:oxidization_remove"
+				}
+			]
+		},
+		{
+			"type": "inventoryactions:play_sound",
+			"sound": "minecraft:item.axe.scrape",
+			"category": "block"
+		}
+	]
+}

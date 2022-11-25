@@ -1,0 +1,45 @@
+{
+	"conditions": [
+		{
+			"type": "inventoryactions:item_tag",
+			"source": "action_using",
+			"tags": [
+				"forge:dyes"
+			]
+		},
+		{
+			"type": "inventoryactions:item",
+			"source": "action_target",
+			"items": [
+				"minecraft:leather_helmet",
+				"minecraft:leather_chestplate",
+				"minecraft:leather_leggings",
+				"minecraft:leather_boots",
+				"minecraft:leather_horse_armor"
+			]
+		}
+	],
+	
+	"functions": [
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_target",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:shrink_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
+			"type": "inventoryactions:crafting",
+			"pattern": [
+				"AD"
+			],
+			"key": {
+				"A": "action_target",
+				"D": "action_using"
+			}
+		}
+	]
+}

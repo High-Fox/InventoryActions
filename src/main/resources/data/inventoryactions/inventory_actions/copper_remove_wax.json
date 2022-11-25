@@ -1,11 +1,9 @@
 {
 	"conditions": [
 		{
-			"type": "inventoryactions:item_tag",
+			"type": "inventoryactions:tool",
 			"source": "action_using",
-			"tags": [
-				"forge:tools/axes"
-			]
+			"tool": "axe"
 		},
 		{
 			"type": "inventoryactions:item_map",

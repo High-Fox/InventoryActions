@@ -14,11 +14,9 @@
 		{
 			"_comment": "Checks if the held item is in the pickaxes tag",
 			
-			"type": "inventoryactions:item_tag",
+			"type": "inventoryactions:tool",
 			"source": "action_using",
-			"tags": [
-				"forge:tools/pickaxes"
-			]
+			"tool": "pickaxe"
 		},
 		{
 			"_comment": "Checks if the pickaxe is capable of mining diamond ore (at least iron tier)",

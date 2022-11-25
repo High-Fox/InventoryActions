@@ -119,7 +119,7 @@ public class NbtUtils {
 	}
 
 	@Nullable
-	private static Pair<@Nullable Double, @Nullable Double> rangeFromString(String str) {
+	private static Pair<Double, Double> rangeFromString(String str) {
 		Matcher rangeMatcher = NUMBER_RANGE_PATTERN.matcher(str);
 
 		if (rangeMatcher.find()) {

@@ -4,9 +4,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
+import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
@@ -35,7 +37,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 			.disableHtmlEscaping()
 			.create();
 	private static ImmutableMap<ResourceLocation, InventoryAction> ALL_ACTIONS = ImmutableMap.of();
-	private final RegistryAccess registryAccess = RegistryAccess.builtinCopy();
+	private final Supplier<RegistryAccess> registryAccess = Suppliers.memoize(RegistryAccess::builtinCopy);
 
 	public ActionsManager() {
 		super(GSON, "inventory_actions");
@@ -43,7 +45,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 
 	@Override
 	protected void apply(Map<ResourceLocation, JsonElement> elements, ResourceManager resourceManager, ProfilerFiller profiler) {
-		DynamicOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, this.registryAccess);
+		DynamicOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, this.registryAccess.get());
 		Map<ResourceLocation, InventoryAction> loadedActions = Maps.newHashMap();
 
 		elements.forEach((id, element) -> {
@@ -52,7 +54,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 			boolean replace = loadedActions.containsKey(id);
 			if (remove || replace) {
 				if (!id.getNamespace().equalsIgnoreCase(InventoryActions.MODID)) {
-					InventoryActions.LOG.error("Duplicate inventory action: {}", id);
+					InventoryActions.LOG.error("Cannot override custom inventory action {}, skipping", id);
 					return;
 				}
 
@@ -87,7 +89,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 
 	public static void clearActions() {
 		ALL_ACTIONS = ImmutableMap.of();
-		InventoryActions.LOG.info("Cleared inventory actions");
+		InventoryActions.LOG.debug("Cleared inventory actions");
 	}
 
 	@Nullable
@@ -99,21 +101,8 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 		return Collections.unmodifiableCollection(ALL_ACTIONS.values());
 	}
 
-	public static boolean canRunAny(ActionContext context) {
-		return getAllActions().stream().anyMatch(action -> action.canRunAction(context));
-	}
-
-	public static void runAction(ActionContext context) {
-		Optional<InventoryAction> validAction = getAllActions().stream().filter(action -> action.canRunAction(context)).findFirst();
-		if (validAction.isEmpty()) {
-			InventoryActions.LOG.error("Error running inventory action: No valid action found. This should not happen!");
-		}
-
-		try {
-			validAction.get().runAction(context);
-		} catch (Exception e) {
-			InventoryActions.LOG.error("Error running inventory action: {}", e.getMessage());
-		}
+	public static Optional<InventoryAction> getActionForContext(ActionContext context) {
+		return getAllActions().stream().filter(action -> action.canRunAction(context)).findFirst();
 	}
 
 }

@@ -55,7 +55,7 @@ public class ClientHooks {
 				ItemStack targetStack = slot.getItem();
 				ActionContext context = new ActionContext(targetStack, carriedStack, slot, minecraft.player);
 
-				if (!targetStack.isEmpty() && !carriedStack.isEmpty() && ActionsManager.canRunAny(context)) {
+				if (!targetStack.isEmpty() && !carriedStack.isEmpty() && ActionsManager.getActionForContext(context).isPresent()) {
 					int x = slot.x;
 					int y = slot.y;
 

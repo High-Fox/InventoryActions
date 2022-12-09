@@ -63,7 +63,7 @@ public class InventoryAction {
 				try {
 					this.workQueue.poll().run();
 				} catch (Exception e) {
-					throw new RuntimeException(e);
+					InventoryActions.LOG.error("Error running inventory action: {}", e.getMessage());
 				}
 			}
 		}

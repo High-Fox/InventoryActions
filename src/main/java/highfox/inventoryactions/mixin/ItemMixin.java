@@ -20,12 +20,12 @@ public class ItemMixin {
 	private void overrideStackedOnOther(ItemStack stack, Slot slot, ClickAction clickAction, Player player, CallbackInfoReturnable<Boolean> callback) {
 		if (!callback.getReturnValueZ() && clickAction == ClickAction.SECONDARY) {
 			ActionContext context = new ActionContext(slot.getItem(), stack, slot, player);
-			if (ActionsManager.canRunAny(context)) {
+			ActionsManager.getActionForContext(context).ifPresent(action -> {
 				if (!player.getLevel().isClientSide()) {
-					ActionsManager.runAction(context);
+					action.runAction(context);
 				}
 				callback.setReturnValue(true);
-			}
+			});
 		}
 	}
 

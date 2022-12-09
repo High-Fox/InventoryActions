@@ -14,14 +14,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 
-public class ToolCondition extends ItemSourcingCondition {
-	public static final Codec<ToolCondition> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(
+public class ItemToolCondition extends ItemSourcingCondition {
+	public static final Codec<ItemToolCondition> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(
 			UtilCodecs.enumCodec(ToolType::values, ToolType::byName, ToolType::getName).fieldOf("tool").forGetter(o -> o.toolType)
-	).apply(instance, ToolCondition::new));
+	).apply(instance, ItemToolCondition::new));
 
 	private final ToolType toolType;
 
-	public ToolCondition(ItemSource source, ToolType toolType) {
+	public ItemToolCondition(ItemSource source, ToolType toolType) {
 		super(source);
 		this.toolType = toolType;
 	}

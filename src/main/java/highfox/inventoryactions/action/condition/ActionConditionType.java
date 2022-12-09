@@ -22,7 +22,7 @@ public class ActionConditionType {
 	public static final RegistryObject<ActionConditionType> ITEM_MAP = register("item_map", ItemMapCondition.CODEC);
 	public static final RegistryObject<ActionConditionType> ITEM_TIER = register("item_tier", ItemTierCondition.CODEC);
 	public static final RegistryObject<ActionConditionType> PLAYER = register("player", PlayerCondition.CODEC);
-	public static final RegistryObject<ActionConditionType> TOOL = register("tool", ToolCondition.CODEC);
+	public static final RegistryObject<ActionConditionType> TOOL = register("tool", ItemToolCondition.CODEC);
 
 	public static final RegistryObject<ActionConditionType> INVERT = register("invert", InvertCondition.CODEC);
 	public static final RegistryObject<ActionConditionType> AND = register("and", AndCondition.CODEC);

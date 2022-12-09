@@ -22,14 +22,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.WeatheringCopper;
 
 public class DefaultItemMaps {
-	public static final Supplier<BiMap<ResourceLocation, ItemMap>> MAPS_BY_NAME = Suppliers.memoize(() -> Util.make(ImmutableBiMap.<ResourceLocation, ItemMap>builder(), builder -> {
+	private static final Supplier<BiMap<ResourceLocation, ItemMap>> MAPS_BY_NAME = Suppliers.memoize(() -> Util.make(ImmutableBiMap.<ResourceLocation, ItemMap>builder(), builder -> {
 			add(builder, "strippables", new ItemMap(fromBlockMap(AxeItem.STRIPPABLES)));
 			add(builder, "oxidization_add",  new ItemMap(fromBlockMap(WeatheringCopper.NEXT_BY_BLOCK.get())));
 			add(builder, "oxidization_remove",  new ItemMap(fromBlockMap(WeatheringCopper.PREVIOUS_BY_BLOCK.get())));
 			add(builder, "wax_on", new ItemMap(fromBlockMap(HoneycombItem.WAXABLES.get())));
 			add(builder, "wax_off", new ItemMap(fromBlockMap(HoneycombItem.WAX_OFF_BY_BLOCK.get())));
 		}).build());
-	public static final Supplier<BiMap<ItemMap, ResourceLocation>> NAMES_BY_MAP = Suppliers.memoize(() -> MAPS_BY_NAME.get().inverse());
+	private static final Supplier<BiMap<ItemMap, ResourceLocation>> NAMES_BY_MAP = Suppliers.memoize(() -> MAPS_BY_NAME.get().inverse());
 
 	@Nullable
 	public static ItemMap getValue(ResourceLocation name) {

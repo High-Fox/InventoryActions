@@ -1,3 +1,5 @@
+![badge](https://cf.way2muchnoise.eu/versions/676122.svg?badge_style=for_the_badge)
+
 ## Inventory Actions
 Allows you to perform various repetitive, time consuming interactions between blocks and items within the inventory. Now data-driven!
 

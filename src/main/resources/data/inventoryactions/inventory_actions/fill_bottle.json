@@ -39,7 +39,7 @@
 		},
 		{
 			"type": "inventoryactions:play_sound",
-			"sound": "item.bottle.fill",
+			"sound": "minecraft:item.bottle.fill",
 			"category": "player"
 		}
 	]

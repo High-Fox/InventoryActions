@@ -2,45 +2,39 @@ package highfox.inventoryactions.action.condition;
 
 import java.util.Optional;
 
-import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.condition.ActionConditionType;
+import highfox.inventoryactions.api.condition.IActionCondition;
+import highfox.inventoryactions.api.serialization.IDeserializer;
 import highfox.inventoryactions.util.ClientMethods;
 import highfox.inventoryactions.util.NbtUtils;
-import highfox.inventoryactions.util.UtilCodecs;
+import highfox.inventoryactions.util.SerializationUtils;
+import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.advancements.critereon.NbtPredicate;
 import net.minecraft.core.Registry;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.fml.DistExecutor;
 
 public class PlayerCondition implements IActionCondition {
-	public static final Codec<PlayerCondition> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			UtilCodecs.optionalFieldOf(ResourceKey.codec(Registry.DIMENSION_REGISTRY), "dimension").forGetter(o -> o.dimension),
-			UtilCodecs.optionalFieldOf(UtilCodecs.enumCodec(GameType::values, GameType::byName, GameType::getName), "game_mode").forGetter(o -> o.gameMode),
-			UtilCodecs.optionalFieldOf(UtilCodecs.rangedCodec(ExtraCodecs.NON_NEGATIVE_INT, "minimum", "maximum", (min, max) -> {
-				Integer minimum = min.orElse(Integer.valueOf(0));
-				Integer maximum = max.orElse(Integer.MAX_VALUE);
-				return minimum.compareTo(maximum) <= 0 ? DataResult.success(Pair.of(minimum, maximum)) : DataResult.error("Minimum must be less than or equal to maximum");
-			}, Pair::getFirst, Pair::getSecond), "experience_level").forGetter(o -> o.experienceLevel),
-			CompoundTag.CODEC.optionalFieldOf("nbt").forGetter(o -> o.nbt)
-	).apply(instance, PlayerCondition::new));
-
 	private final Optional<ResourceKey<Level>> dimension;
 	private final Optional<GameType> gameMode;
-	private final Optional<Pair<Integer, Integer>> experienceLevel;
+	private final Optional<MinMaxBounds.Ints> experienceLevel;
 	private final Optional<CompoundTag> nbt;
 
-	public PlayerCondition(Optional<ResourceKey<Level>> dimension, Optional<GameType> gameMode, Optional<Pair<Integer, Integer>> experienceLevel, Optional<CompoundTag> nbt) {
+	public PlayerCondition(Optional<ResourceKey<Level>> dimension, Optional<GameType> gameMode, Optional<MinMaxBounds.Ints> experienceLevel, Optional<CompoundTag> nbt) {
 		this.dimension = dimension;
 		this.gameMode = gameMode;
 		this.experienceLevel = experienceLevel;
@@ -48,7 +42,7 @@ public class PlayerCondition implements IActionCondition {
 	}
 
 	@Override
-	public boolean test(ActionContext context) {
+	public boolean test(IActionContext context) {
 		Player player = context.getPlayer();
 
 		if (this.dimension.isPresent() && !player.getLevel().dimension().equals(this.dimension.get())) {
@@ -57,8 +51,8 @@ public class PlayerCondition implements IActionCondition {
 
 		if (this.gameMode.isPresent()) {
 			GameType gameType;
-			if (player instanceof ServerPlayer serverPlayer) {
-				gameType = serverPlayer.gameMode.getGameModeForPlayer();
+			if (player instanceof ServerPlayer) {
+				gameType = ((ServerPlayer) player).gameMode.getGameModeForPlayer();
 			} else {
 				gameType = DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> ClientMethods::getClientGameMode);
 			}
@@ -68,7 +62,7 @@ public class PlayerCondition implements IActionCondition {
 			}
 		}
 
-		if (this.experienceLevel.isPresent() && (player.experienceLevel < this.experienceLevel.get().getFirst() || player.experienceLevel > this.experienceLevel.get().getSecond())) {
+		if (this.experienceLevel.isPresent() && !this.experienceLevel.get().matches(player.experienceLevel)) {
 			return false;
 		}
 
@@ -84,7 +78,42 @@ public class PlayerCondition implements IActionCondition {
 
 	@Override
 	public ActionConditionType getType() {
-		return ActionConditionType.PLAYER.get();
+		return ActionConditionTypes.PLAYER.get();
+	}
+
+	@Override
+	public void toNetwork(FriendlyByteBuf buffer) {
+		buffer.writeOptional(this.dimension, FriendlyByteBuf::writeResourceKey);
+		buffer.writeOptional(this.gameMode, FriendlyByteBuf::writeEnum);
+		buffer.writeOptional(this.experienceLevel, (buf, bounds) -> {
+			buf.writeOptional(Optional.ofNullable(bounds.getMin()), FriendlyByteBuf::writeVarInt);
+			buf.writeOptional(Optional.ofNullable(bounds.getMax()), FriendlyByteBuf::writeVarInt);
+		});
+		buffer.writeOptional(this.nbt, FriendlyByteBuf::writeNbt);
+	}
+
+	public static class Deserializer implements IDeserializer<PlayerCondition> {
+
+		@Override
+		public PlayerCondition fromJson(JsonObject json, JsonDeserializationContext context) {
+			ResourceKey<Level> dimension = json.has("dimension") ? ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(GsonHelper.getAsString(json, "dimension"))) : null;
+			GameType gameMode = json.has("game_mode") ? GameType.byName(GsonHelper.getAsString(json, "game_mode")) : null;
+			MinMaxBounds.Ints experienceLevel = json.has("experience_level") ? SerializationUtils.getAsIntRange(json, "experience_level") : null;
+			CompoundTag nbt = json.has("nbt") ? CraftingHelper.getNBT(json.get("nbt")) : null;
+
+			return new PlayerCondition(Optional.ofNullable(dimension), Optional.ofNullable(gameMode), Optional.ofNullable(experienceLevel), Optional.ofNullable(nbt));
+		}
+
+		@Override
+		public PlayerCondition fromNetwork(FriendlyByteBuf buffer) {
+			Optional<ResourceKey<Level>> dimension = buffer.readOptional(buf -> buf.readResourceKey(Registry.DIMENSION_REGISTRY));
+			Optional<GameType> gameMode = buffer.readOptional(buf -> buf.readEnum(GameType.class));
+			Optional<MinMaxBounds.Ints> experienceLevel = buffer.readOptional(buf -> MinMaxBounds.Ints.between(buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null), buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null)));
+			Optional<CompoundTag> nbt = buffer.readOptional(buf -> buf.readAnySizeNbt());
+
+			return new PlayerCondition(dimension, gameMode, experienceLevel, nbt);
+		}
+
 	}
 
 }

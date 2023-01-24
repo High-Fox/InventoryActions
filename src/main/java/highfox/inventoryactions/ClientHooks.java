@@ -7,6 +7,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 
 import highfox.inventoryactions.action.ActionContext;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.util.ActionsConstants;
 import highfox.inventoryactions.data.ActionsManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -23,7 +25,7 @@ import net.minecraftforge.client.event.ContainerScreenEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod.EventBusSubscriber;
 
-@EventBusSubscriber(value = Dist.CLIENT, modid = InventoryActions.MODID)
+@EventBusSubscriber(value = Dist.CLIENT, modid = ActionsConstants.MODID)
 public class ClientHooks {
 	private static final FormattedCharSequence ICON = FormattedCharSequence.forward("+", Style.EMPTY.withColor(ChatFormatting.WHITE));
 	private static final float ICON_SCALE = 0.65F;
@@ -53,7 +55,7 @@ public class ClientHooks {
 			for (int i = 0; i < slots.size(); i++) {
 				Slot slot = slots.get(i);
 				ItemStack targetStack = slot.getItem();
-				ActionContext context = new ActionContext(targetStack, carriedStack, slot, minecraft.player);
+				IActionContext context = new ActionContext(targetStack, carriedStack, slot, minecraft.player);
 
 				if (!targetStack.isEmpty() && !carriedStack.isEmpty() && ActionsManager.getActionForContext(context).isPresent()) {
 					int x = slot.x;

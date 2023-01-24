@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import highfox.inventoryactions.api.util.ActionsConstants;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -42,9 +43,9 @@ public class ActionConfig {
 	}
 
 	public static final class ConfigScreen extends Screen {
-		private static final Component TITLE = Component.translatable(InventoryActions.MODID + ".configScreen.title");
-		private static final String ENABLE_ACTION_ICONS = InventoryActions.MODID + ".configScreen.enableActionIcons";
-		private static final Component ENABLE_ACTION_ICONS_TOOLTIP = Component.translatable(InventoryActions.MODID + ".configScreen.enableActionIcons.tooltip");
+		private static final Component TITLE = Component.translatable(ActionsConstants.MODID + ".configScreen.title");
+		private static final String ENABLE_ACTION_ICONS = ActionsConstants.MODID + ".configScreen.enableActionIcons";
+		private static final Component ENABLE_ACTION_ICONS_TOOLTIP = Component.translatable(ActionsConstants.MODID + ".configScreen.enableActionIcons.tooltip");
 		private final Screen lastScreen;
 		private OptionsList optionsList;
 

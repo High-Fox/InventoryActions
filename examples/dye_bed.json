@@ -12,13 +12,25 @@
 			]
 		},
 		{
-			"_comment": "Checks if the held item is in the dyes tag",
+			"_comment": "Checks if the held item is in the dyes tag...",
 			
 			"type": "inventoryactions:item_tag",
 			"source": "action_using",
 			"tags": [
 				"forge:dyes"
 			]
+		},
+		{
+			"_comment": "...and not white dye (the bed is already white)",
+		
+			"type": "inventoryactions:invert",
+			"condition": {
+				"type": "inventoryactions:item",
+				"source": "action_using",
+				"items": [
+					"minecraft:white_dye"
+				]
+			}
 		}
 	],
 	

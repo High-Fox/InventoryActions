@@ -2,43 +2,54 @@ package highfox.inventoryactions.action.function;
 
 import java.util.Queue;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
-import highfox.inventoryactions.util.UtilCodecs;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.ItemSourcingFunction;
+import highfox.inventoryactions.api.itemsource.IItemSource;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 
 public class DamageItemFunction extends ItemSourcingFunction {
-	public static final Codec<DamageItemFunction> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(
-			UtilCodecs.NUMBER_PROVIDER_CODEC.optionalFieldOf("amount", ConstantValue.exactly(1.0F)).forGetter(o -> o.amountProvider)
-	).apply(instance, DamageItemFunction::new));
-
 	private final NumberProvider amountProvider;
 
-	public DamageItemFunction(ItemSource source, NumberProvider amount) {
+	public DamageItemFunction(IItemSource source, NumberProvider amountProvider) {
 		super(source);
-		this.amountProvider = amount;
+		this.amountProvider = amountProvider;
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
-		ItemStack stack = this.source.get(context);
-		int amount = this.amountProvider.getInt(context.getLootContext());
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
+		if (!context.getPlayer().isCreative()) {
+			ItemStack stack = this.source.get(context);
+			int amount = this.amountProvider.getInt(context.getLootContext());
 
-		workQueue.add(() -> {
-			stack.hurtAndBreak(amount, context.getPlayer(), player -> player.broadcastBreakEvent(LivingEntity.getEquipmentSlotForItem(stack)));
-			this.source.setAndUpdate(context, stack);
-		});
+			workQueue.add(() -> {
+				stack.hurtAndBreak(amount, context.getPlayer(), player -> player.broadcastBreakEvent(LivingEntity.getEquipmentSlotForItem(stack)));
+				this.source.setAndUpdate(context, stack);
+			});
+		}
 	}
 
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.DAMAGE_ITEM.get();
+		return ActionFunctionTypes.DAMAGE_ITEM.get();
+	}
+
+	public static class Deserializer extends BaseDeserializer<DamageItemFunction> {
+
+		@Override
+		public DamageItemFunction fromJson(JsonObject json, JsonDeserializationContext context, IItemSource source) {
+			NumberProvider amountProvider = GsonHelper.getAsObject(json, "amount", ConstantValue.exactly(1.0F), context, NumberProvider.class);
+
+			return new DamageItemFunction(source, amountProvider);
+		}
+
 	}
 
 }

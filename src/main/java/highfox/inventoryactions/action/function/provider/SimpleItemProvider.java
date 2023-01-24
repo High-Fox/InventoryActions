@@ -1,42 +1,53 @@
 package highfox.inventoryactions.action.function.provider;
 
-import java.util.Optional;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import com.mojang.datafixers.util.Either;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.itemprovider.ItemProviderType;
+import highfox.inventoryactions.api.itemprovider.LootFunctionsProvider;
+import highfox.inventoryactions.api.util.LootParams;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.Holder;
-import net.minecraft.resources.RegistryFileCodec;
+import net.minecraft.core.Holder.Reference;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
 import net.minecraftforge.registries.ForgeRegistries;
 
-public class SimpleItemProvider extends ItemFunctionsProvider implements ISingleItemResult {
-	public static final Codec<SimpleItemProvider> CODEC = RecordCodecBuilder.create(instance -> functionsCodec(instance).and(
-			RegistryFileCodec.create(ForgeRegistries.Keys.ITEMS, ForgeRegistries.ITEMS.getCodec()).fieldOf("item").forGetter(o -> o.item)
-	).apply(instance, SimpleItemProvider::new));
-
+public class SimpleItemProvider extends LootFunctionsProvider {
 	protected final Holder<Item> item;
 
-	public SimpleItemProvider(LootItemFunction[] modifiers, Optional<Either<ItemSource, IItemProvider>> tool, Optional<BlockState> blockState, Holder<Item> item) {
-		super(modifiers, tool, blockState);
+	public SimpleItemProvider(LootItemFunction[] modifiers, LootParams params, Holder<Item> item) {
+		super(modifiers, params);
 		this.item = item;
 	}
 
 	@Override
-	public ItemStack getItem(ActionContext context, RandomSource random) {
-		return this.applyModifiers(context, new ItemStack(this.item));
+	public void addItems(IActionContext context, RandomSource random, ObjectArrayList<ItemStack> results) {
+		results.add(this.applyModifiers(context, new ItemStack(this.item)));
 	}
 
 	@Override
 	public ItemProviderType getType() {
-		return ItemProviderType.SIMPLE.get();
+		return ItemProviderTypes.SIMPLE.get();
+	}
+
+	public static class Deserializer extends BaseSerializer<SimpleItemProvider> {
+
+		@Override
+		public SimpleItemProvider fromJson(JsonObject json, JsonDeserializationContext context, LootItemFunction[] functions, LootParams params) {
+			ResourceLocation itemName = new ResourceLocation(GsonHelper.getAsString(json, "item"));
+			Reference<Item> holder = ForgeRegistries.ITEMS.getDelegate(itemName).orElseThrow(() -> {
+				return new IllegalArgumentException("Unknown item: " + itemName);
+			});
+
+			return new SimpleItemProvider(functions, params, holder);
+		}
+
 	}
 
 }

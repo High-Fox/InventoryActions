@@ -4,7 +4,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import highfox.inventoryactions.InventoryActions;
+import highfox.inventoryactions.api.util.ActionsConstants;
 import highfox.inventoryactions.network.message.IMessage;
 import highfox.inventoryactions.network.message.SyncActionsMessage;
 import net.minecraft.network.FriendlyByteBuf;
@@ -19,7 +19,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 public class ActionsNetwork {
 	private static final String VERSION = "1";
 	public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-			new ResourceLocation(InventoryActions.MODID, "action_syncing"),
+			new ResourceLocation(ActionsConstants.MODID, "action_syncing"),
 			() -> "1",
 			VERSION::equals,
 			VERSION::equals

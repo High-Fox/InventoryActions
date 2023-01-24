@@ -4,30 +4,30 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
-import highfox.inventoryactions.util.UtilCodecs;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.condition.ActionConditionType;
+import highfox.inventoryactions.api.condition.ItemSourcingCondition;
+import highfox.inventoryactions.api.itemsource.IItemSource;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.ToolAction;
 import net.minecraftforge.common.ToolActions;
 
 public class ItemToolCondition extends ItemSourcingCondition {
-	public static final Codec<ItemToolCondition> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(
-			UtilCodecs.enumCodec(ToolType::values, ToolType::byName, ToolType::getName).fieldOf("tool").forGetter(o -> o.toolType)
-	).apply(instance, ItemToolCondition::new));
-
 	private final ToolType toolType;
 
-	public ItemToolCondition(ItemSource source, ToolType toolType) {
+	public ItemToolCondition(IItemSource source, ToolType toolType) {
 		super(source);
 		this.toolType = toolType;
 	}
 
 	@Override
-	public boolean test(ActionContext context) {
+	public boolean test(IActionContext context) {
 		ItemStack stack = this.source.get(context);
 
 		return this.toolType.matches(stack);
@@ -35,7 +35,12 @@ public class ItemToolCondition extends ItemSourcingCondition {
 
 	@Override
 	public ActionConditionType getType() {
-		return ActionConditionType.TOOL.get();
+		return ActionConditionTypes.TOOL.get();
+	}
+
+	@Override
+	public void additionalToNetwork(FriendlyByteBuf buffer) {
+		buffer.writeUtf(this.toolType.getName());
 	}
 
 	private static enum ToolType {
@@ -47,7 +52,7 @@ public class ItemToolCondition extends ItemSourcingCondition {
 		SHOVEL("shovel", ToolActions.DEFAULT_SHOVEL_ACTIONS),
 		SHEARS("shears", ToolActions.DEFAULT_SHEARS_ACTIONS);
 
-		protected static final ToolType[] VALUES = values();
+		private static final ToolType[] VALUES = values();
 		private final String name;
 		private final Set<ToolAction> toolActions;
 
@@ -74,6 +79,28 @@ public class ItemToolCondition extends ItemSourcingCondition {
 
 			return null;
 		}
+	}
+
+	public static class Deserializer extends BaseDeserializer<ItemToolCondition> {
+
+		@Override
+		public ItemToolCondition fromJson(JsonObject json, JsonDeserializationContext context, IItemSource source) {
+			String toolName = GsonHelper.getAsString(json, "tool");
+			ToolType toolType = ToolType.byName(toolName);
+			if (toolType == null) {
+				throw new JsonSyntaxException("Unknown tool type: " + toolName);
+			}
+
+			return new ItemToolCondition(source, toolType);
+		}
+
+		@Override
+		public ItemToolCondition fromNetwork(FriendlyByteBuf buffer, IItemSource source) {
+			ToolType toolType = ToolType.byName(buffer.readUtf());
+
+			return new ItemToolCondition(source, toolType);
+		}
+
 	}
 
 }

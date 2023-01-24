@@ -1,12 +1,13 @@
 package highfox.inventoryactions.util;
 
-import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.math.DoubleMath;
 import com.mojang.datafixers.util.Pair;
 
 import it.unimi.dsi.fastutil.bytes.Byte2ObjectArrayMap;
@@ -27,6 +28,7 @@ import net.minecraft.nbt.NumericTag;
 import net.minecraft.nbt.ShortTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.util.Mth;
 
 public class NbtUtils {
 	private static final Pattern NUMBER_RANGE_PATTERN = Pattern.compile("^(\\d*\\.?\\d+)(?=\\.{3}(\\d*\\.?\\d+)$)");
@@ -52,30 +54,40 @@ public class NbtUtils {
 		} else if (otherTag == null || !tag.getClass().equals(otherTag.getClass())) {
 			return false;
 		} else if (tag instanceof CompoundTag) {
-			CompoundTag compound = (CompoundTag)tag;
-			CompoundTag otherCompound = (CompoundTag)otherTag;
+			CompoundTag compound = (CompoundTag) tag;
+			CompoundTag otherCompound = (CompoundTag) otherTag;
 
 			for (String key : compound.getAllKeys()) {
 				Tag value = compound.get(key);
 				Tag otherValue = otherCompound.contains(key) ? otherCompound.get(key) : DEFAULT_TAGS.get(value.getId());
 
 				if (otherValue instanceof NumericTag) {
-					Double otherDoubleValue = ((NumericTag)otherValue).getAsDouble();
+					double otherNumber = ((NumericTag) otherValue).getAsDouble();
 
 					if (value instanceof NumericTag) {
-						Double doubleValue = ((NumericTag)value).getAsDouble();
-						if (!doubleValue.equals(otherDoubleValue)) {
+						double number = ((NumericTag) value).getAsDouble();
+
+						if (!DoubleMath.fuzzyEquals(number, otherNumber, Mth.EPSILON)) {
 							return false;
 						}
 					} else if (value instanceof StringTag) {
-						String str = ((StringTag)value).getAsString();
-						Pair<Double, Double> range = rangeFromString(str);
+						String str = ((StringTag) value).getAsString();
+						Pair<OptionalDouble, OptionalDouble> range = rangeFromString(str);
 
 						if (range != null) {
-							Optional<Double> minimum = Optional.ofNullable(range.getFirst());
-							Optional<Double> maximum = Optional.ofNullable(range.getSecond());
+							OptionalDouble minimum = range.getFirst();
+							OptionalDouble maximum = range.getSecond();
+							boolean validMin = true;
+							boolean validMax = true;
 
-							if (minimum.map(min -> otherDoubleValue >= min).orElse(true) && maximum.map(max -> otherDoubleValue <= max).orElse(true)) {
+							if (minimum.isPresent()) {
+								validMin = otherNumber >= minimum.orElseThrow();
+							}
+							if (maximum.isPresent()) {
+								validMax = otherNumber <= maximum.orElseThrow();
+							}
+
+							if (validMin && validMax) {
 								return true;
 							}
 						}
@@ -89,8 +101,8 @@ public class NbtUtils {
 
 			return true;
 		} else if (tag instanceof ListTag) {
-			ListTag list = (ListTag)tag;
-			ListTag otherList = (ListTag)otherTag;
+			ListTag list = (ListTag) tag;
+			ListTag otherList = (ListTag) otherTag;
 
 			if (list.isEmpty()) {
 				return otherList.isEmpty();
@@ -119,33 +131,38 @@ public class NbtUtils {
 	}
 
 	@Nullable
-	private static Pair<Double, Double> rangeFromString(String str) {
+	private static Pair<OptionalDouble, OptionalDouble> rangeFromString(String str) {
 		Matcher rangeMatcher = NUMBER_RANGE_PATTERN.matcher(str);
 
 		if (rangeMatcher.find()) {
-			Double minimum = Double.parseDouble(rangeMatcher.group(1));
-			Double maximum = Double.parseDouble(rangeMatcher.group(2));
+			OptionalDouble minimum = OptionalDouble.of(Double.parseDouble(rangeMatcher.group(1)));
+			OptionalDouble maximum = OptionalDouble.of(Double.parseDouble(rangeMatcher.group(2)));
 
 			return Pair.of(minimum, maximum);
 		} else {
-			Double minimum = null;
-			Double maximum = null;
+			OptionalDouble minimum = OptionalDouble.empty();
+			OptionalDouble maximum = OptionalDouble.empty();
 
 			if (str.startsWith(">")) {
 				try {
-					minimum = Double.parseDouble(str.substring(1));
+					minimum = OptionalDouble.of(Double.parseDouble(str.substring(1)));
 				} catch (NumberFormatException e) {
-					minimum = null;
+					if (!minimum.isEmpty()) {
+						minimum = OptionalDouble.empty();
+					}
 				}
+
 			} else if (str.startsWith("<")) {
 				try {
-					maximum = Double.parseDouble(str.substring(1));
+					maximum = OptionalDouble.of(Double.parseDouble(str.substring(1)));
 				} catch (NumberFormatException e) {
-					maximum = null;
+					if (!maximum.isEmpty()) {
+						maximum = OptionalDouble.empty();
+					}
 				}
 			}
 
-			if (minimum == null && maximum == null) {
+			if (minimum.isEmpty() && maximum.isEmpty()) {
 				return null;
 			} else {
 				return Pair.of(minimum, maximum);

@@ -1,37 +1,35 @@
 package highfox.inventoryactions.action.condition;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.common.collect.ImmutableList;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
-import highfox.inventoryactions.util.UtilCodecs;
-import net.minecraft.core.HolderSet;
-import net.minecraft.core.RegistryCodecs;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.condition.ActionConditionType;
+import highfox.inventoryactions.api.condition.ItemSourcingCondition;
+import highfox.inventoryactions.api.itemsource.IItemSource;
+import highfox.inventoryactions.util.SerializationUtils;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.ExtraCodecs;
-import net.minecraft.world.item.Item;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class ItemCondition extends ItemSourcingCondition {
-	public static final Codec<ItemCondition> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(instance.group(
-			UtilCodecs.optionalFieldOf(RegistryCodecs.homogeneousList(ForgeRegistries.Keys.ITEMS, ForgeRegistries.ITEMS.getCodec()), "items").forGetter(o -> o.items),
-			UtilCodecs.optionalFieldOf(ExtraCodecs.PATTERN, "namespace").forGetter(o -> o.namespacePattern),
-			UtilCodecs.optionalFieldOf(ExtraCodecs.PATTERN, "path").forGetter(o -> o.pathPattern)
-	)).apply(instance, ItemCondition::new));
-
-	private final Optional<HolderSet<Item>> items;
+	private final List<ResourceLocation> items;
 	private final Optional<Pattern> namespacePattern;
 	private final Predicate<String> namespacePredicate;
 	private final Optional<Pattern> pathPattern;
 	private final Predicate<String> pathPredicate;
 
-	public ItemCondition(ItemSource source, Optional<HolderSet<Item>> items, Optional<Pattern> namespacePattern, Optional<Pattern> pathPattern) {
+	public ItemCondition(IItemSource source, List<ResourceLocation> items, Optional<Pattern> namespacePattern, Optional<Pattern> pathPattern) {
 		super(source);
 		this.items = items;
 		this.namespacePattern = namespacePattern;
@@ -41,14 +39,16 @@ public class ItemCondition extends ItemSourcingCondition {
 	}
 
 	@Override
-	public boolean test(ActionContext context) {
+	public boolean test(IActionContext context) {
 		ItemStack stack = this.source.get(context);
 		ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
 
-		if (this.items.isPresent() && !this.items.get().contains(stack.getItemHolder())) {
+		if (!this.items.isEmpty() && !this.items.stream().anyMatch(id::equals)) {
 			return false;
-		} else if (!this.namespacePredicate.test(id.getNamespace()) || !this.pathPredicate.test(id.getPath())) {
-			return false;
+		} else if (id != null) {
+			if (!this.namespacePredicate.test(id.getNamespace()) || !this.pathPredicate.test(id.getPath())) {
+				return false;
+			}
 		}
 
 		return true;
@@ -56,7 +56,49 @@ public class ItemCondition extends ItemSourcingCondition {
 
 	@Override
 	public ActionConditionType getType() {
-		return ActionConditionType.ITEM.get();
+		return ActionConditionTypes.ITEM.get();
+	}
+
+	@Override
+	public void additionalToNetwork(FriendlyByteBuf buffer) {
+		buffer.writeCollection(this.items, FriendlyByteBuf::writeResourceLocation);
+		buffer.writeOptional(this.namespacePattern, (buf, pattern) -> buf.writeUtf(pattern.pattern()));
+		buffer.writeOptional(this.pathPattern, (buf, pattern) -> buf.writeUtf(pattern.pattern()));
+	}
+
+	public static class Deserializer extends BaseDeserializer<ItemCondition> {
+
+		@Override
+		public ItemCondition fromJson(JsonObject json, JsonDeserializationContext context, IItemSource source) {
+			List<ResourceLocation> items = Optional.ofNullable(GsonHelper.getAsJsonArray(json, "items", null)).map(itemNames -> {
+				ImmutableList.Builder<ResourceLocation> builder = ImmutableList.builderWithExpectedSize(itemNames.size());
+				for (JsonElement element : itemNames) {
+					ResourceLocation name = new ResourceLocation(GsonHelper.convertToString(element, "item"));
+					if (!ForgeRegistries.ITEMS.containsKey(name)) {
+						throw new JsonSyntaxException("Unknown item: " + name);
+					} else {
+						builder.add(name);
+					}
+				}
+
+				return builder.build();
+			}).orElse(ImmutableList.of());
+
+			Optional<Pattern> namespacePattern = Optional.ofNullable(SerializationUtils.getAsPattern(json, "namespace", null));
+			Optional<Pattern> pathPattern = Optional.ofNullable(SerializationUtils.getAsPattern(json, "path", null));
+
+			return new ItemCondition(source, items, namespacePattern, pathPattern);
+		}
+
+		@Override
+		public ItemCondition fromNetwork(FriendlyByteBuf buffer, IItemSource source) {
+			List<ResourceLocation> items = buffer.readList(FriendlyByteBuf::readResourceLocation);
+			Optional<Pattern> namespacePattern = buffer.readOptional(buf -> Pattern.compile(buf.readUtf()));
+			Optional<Pattern> pathPattern = buffer.readOptional(buf -> Pattern.compile(buf.readUtf()));
+
+			return new ItemCondition(source, ImmutableList.copyOf(items), namespacePattern, pathPattern);
+		}
+
 	}
 
 }

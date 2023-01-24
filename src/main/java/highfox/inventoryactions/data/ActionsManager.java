@@ -4,40 +4,46 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.DynamicOps;
-import com.mojang.serialization.JsonOps;
+import com.google.gson.JsonParseException;
 
-import highfox.inventoryactions.InventoryActions;
-import highfox.inventoryactions.action.ActionContext;
 import highfox.inventoryactions.action.InventoryAction;
+import highfox.inventoryactions.action.condition.ActionConditionTypes;
+import highfox.inventoryactions.action.function.ActionFunctionTypes;
+import highfox.inventoryactions.action.function.provider.ItemProviderTypes;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.condition.IActionCondition;
+import highfox.inventoryactions.api.function.IActionFunction;
+import highfox.inventoryactions.api.itemmap.ItemMap;
+import highfox.inventoryactions.api.itemprovider.IItemProvider;
+import highfox.inventoryactions.api.util.ActionsConstants;
 import highfox.inventoryactions.network.message.SyncActionsMessage;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.level.storage.loot.Deserializers;
+import net.minecraftforge.common.util.JsonUtils;
 
 public class ActionsManager extends SimpleJsonResourceReloadListener {
-	private static final Gson GSON = (new GsonBuilder())
-			.setPrettyPrinting()
-			.disableHtmlEscaping()
+	private static final Gson GSON = Deserializers.createFunctionSerializer()
+			.registerTypeHierarchyAdapter(IActionCondition.class, ActionConditionTypes.createTypeAdapater())
+			.registerTypeHierarchyAdapter(IActionFunction.class, ActionFunctionTypes.createTypeAdapater())
+			.registerTypeHierarchyAdapter(IItemProvider.class, ItemProviderTypes.createTypeAdapter())
+			.registerTypeAdapter(ItemMap.class, new ItemMap.Deserializer())
+			.registerTypeAdapter(ImmutableList.class, JsonUtils.ImmutableListTypeAdapter.INSTANCE)
+			.registerTypeAdapter(InventoryAction.class, new InventoryAction.Deserializer())
 			.create();
 	private static ImmutableMap<ResourceLocation, InventoryAction> ALL_ACTIONS = ImmutableMap.of();
-	private final Supplier<RegistryAccess> registryAccess = Suppliers.memoize(RegistryAccess::builtinCopy);
 
 	public ActionsManager() {
 		super(GSON, "inventory_actions");
@@ -45,7 +51,6 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 
 	@Override
 	protected void apply(Map<ResourceLocation, JsonElement> elements, ResourceManager resourceManager, ProfilerFiller profiler) {
-		DynamicOps<JsonElement> ops = RegistryOps.create(JsonOps.INSTANCE, this.registryAccess.get());
 		Map<ResourceLocation, InventoryAction> loadedActions = Maps.newHashMap();
 
 		elements.forEach((id, element) -> {
@@ -53,8 +58,8 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 			boolean remove = GsonHelper.getAsBoolean(jsonObject, "empty", false);
 			boolean replace = loadedActions.containsKey(id);
 			if (remove || replace) {
-				if (!id.getNamespace().equalsIgnoreCase(InventoryActions.MODID)) {
-					InventoryActions.LOG.error("Cannot override custom inventory action {}, skipping", id);
+				if (!id.getNamespace().equalsIgnoreCase(ActionsConstants.MODID)) {
+					ActionsConstants.LOG.error("Cannot override custom inventory action {}, skipping", id);
 					return;
 				}
 
@@ -64,19 +69,18 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 				}
 			}
 
-			DataResult<InventoryAction> result = InventoryAction.CODEC.parse(ops, element);
-			result.get().<Optional<InventoryAction>>map(Optional::of, error -> {
-				InventoryActions.LOG.error("Error loading inventory action {}: {}", id, error.message());
-				return Optional.empty();
-			}).ifPresent(action -> {
+			try {
+				InventoryAction action = GSON.fromJson(element, InventoryAction.class);
 				loadedActions.put(id, action);
-			});
+			} catch (JsonParseException | IllegalArgumentException exception) {
+				ActionsConstants.LOG.error("Error parsing inventory action {}, skipping", id, exception);
+			}
 		});
 
 		setActions(ImmutableMap.copyOf(loadedActions));
 
-		int loadedDefaultActions = ALL_ACTIONS.keySet().stream().filter(id -> id.getNamespace().equals(InventoryActions.MODID)).toList().size();
-		InventoryActions.LOG.info("Loaded {} inventory actions ({} default, {} custom)", ALL_ACTIONS.size(), loadedDefaultActions, ALL_ACTIONS.size() - loadedDefaultActions);
+		int loadedDefaultActions = ALL_ACTIONS.keySet().stream().filter(id -> id.getNamespace().equals(ActionsConstants.MODID)).toList().size();
+		ActionsConstants.LOG.info("Loaded {} inventory actions ({} default, {} custom)", ALL_ACTIONS.size(), loadedDefaultActions, ALL_ACTIONS.size() - loadedDefaultActions);
 	}
 
 	public static SyncActionsMessage getSyncMessage() {
@@ -89,7 +93,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 
 	public static void clearActions() {
 		ALL_ACTIONS = ImmutableMap.of();
-		InventoryActions.LOG.debug("Cleared inventory actions");
+		ActionsConstants.LOG.info("Cleared inventory actions");
 	}
 
 	@Nullable
@@ -101,7 +105,7 @@ public class ActionsManager extends SimpleJsonResourceReloadListener {
 		return Collections.unmodifiableCollection(ALL_ACTIONS.values());
 	}
 
-	public static Optional<InventoryAction> getActionForContext(ActionContext context) {
+	public static Optional<InventoryAction> getActionForContext(IActionContext context) {
 		return getAllActions().stream().filter(action -> action.canRunAction(context)).findFirst();
 	}
 

@@ -1,39 +1,34 @@
 package highfox.inventoryactions.action.function.provider;
 
-import java.util.Optional;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import com.mojang.datafixers.util.Either;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.itemprovider.IItemProvider;
+import highfox.inventoryactions.api.itemprovider.ItemProviderType;
+import highfox.inventoryactions.api.serialization.IDeserializer;
+import highfox.inventoryactions.api.util.LootParams;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
 
-public class LootTableItemProvider implements IItemProvider, IRequiresLootContext {
-	public static final Codec<LootTableItemProvider> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			ResourceLocation.CODEC.fieldOf("loot_table").forGetter(o -> o.tableLocation)
-	).and(IRequiresLootContext.paramsCodec(instance)).apply(instance, LootTableItemProvider::new));
-
+public class LootTableItemProvider implements IItemProvider {
 	private final ResourceLocation tableLocation;
-	private final Optional<Either<ItemSource, IItemProvider>> tool;
-	private final Optional<BlockState> blockState;
+	private final LootParams params;
 
-	public LootTableItemProvider(ResourceLocation tableLocation, Optional<Either<ItemSource, IItemProvider>> tool, Optional<BlockState> blockState) {
+	public LootTableItemProvider(ResourceLocation tableLocation, LootParams params) {
 		this.tableLocation = tableLocation;
-		this.tool = tool;
-		this.blockState = blockState;
+		this.params = params;
 	}
 
 	@Override
-	public void addItems(ActionContext context, RandomSource random, ObjectArrayList<ItemStack> results) {
-		LootContext lootContext = context.getLootContext(this.getToolStack(context), this.blockState.orElse(null));
+	public void addItems(IActionContext context, RandomSource random, ObjectArrayList<ItemStack> results) {
+		LootContext lootContext = context.getLootContext(this.params.getTool(context), this.params.getBlockState());
 		LootTable table = context.getLevel().getServer().getLootTables().get(this.tableLocation);
 		if (table == LootTable.EMPTY) {
 			throw new IllegalArgumentException("Unknown loot table: " + this.tableLocation);
@@ -44,18 +39,25 @@ public class LootTableItemProvider implements IItemProvider, IRequiresLootContex
 	}
 
 	@Override
-	public Optional<Either<ItemSource, IItemProvider>> getTool() {
-		return this.tool;
-	}
-
-	@Override
-	public Optional<BlockState> getBlockState() {
-		return this.blockState;
-	}
-
-	@Override
 	public ItemProviderType getType() {
-		return ItemProviderType.LOOT_TABLE.get();
+		return ItemProviderTypes.LOOT_TABLE.get();
+	}
+
+	public static class Deserializer implements IDeserializer<LootTableItemProvider> {
+
+		@Override
+		public LootTableItemProvider fromJson(JsonObject json, JsonDeserializationContext context) {
+			ResourceLocation tableLocation = new ResourceLocation(GsonHelper.getAsString(json, "loot_table"));
+			LootParams params = LootParams.fromJson(json);
+
+			return new LootTableItemProvider(tableLocation, params);
+		}
+
+		@Override
+		public LootTableItemProvider fromNetwork(FriendlyByteBuf buffer) {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 
 }

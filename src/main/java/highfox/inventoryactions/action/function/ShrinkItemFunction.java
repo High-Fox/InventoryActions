@@ -2,30 +2,28 @@ package highfox.inventoryactions.action.function;
 
 import java.util.Queue;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.ItemSource;
-import highfox.inventoryactions.util.UtilCodecs;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.ItemSourcingFunction;
+import highfox.inventoryactions.api.itemsource.IItemSource;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 
 public class ShrinkItemFunction extends ItemSourcingFunction {
-	public static final Codec<ShrinkItemFunction> CODEC = RecordCodecBuilder.create(instance -> sourceCodec(instance).and(
-			UtilCodecs.optionalFieldOf(UtilCodecs.NUMBER_PROVIDER_CODEC, "amount", ConstantValue.exactly(1.0F)).forGetter(o -> o.amountProvider)
-	).apply(instance, ShrinkItemFunction::new));
-
 	private final NumberProvider amountProvider;
 
-	public ShrinkItemFunction(ItemSource source, NumberProvider amount) {
+	public ShrinkItemFunction(IItemSource source, NumberProvider amountProvider) {
 		super(source);
-		this.amountProvider = amount;
+		this.amountProvider = amountProvider;
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
 		ItemStack stack = this.source.get(context);
 		int amount = this.amountProvider.getInt(context.getLootContext());
 
@@ -37,7 +35,18 @@ public class ShrinkItemFunction extends ItemSourcingFunction {
 
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.SHRINK_ITEM.get();
+		return ActionFunctionTypes.SHRINK_ITEM.get();
+	}
+
+	public static class Deserializer extends BaseDeserializer<ShrinkItemFunction> {
+
+		@Override
+		public ShrinkItemFunction fromJson(JsonObject json, JsonDeserializationContext context, IItemSource source) {
+			NumberProvider amountProvider = GsonHelper.getAsObject(json, "amount", ConstantValue.exactly(1.0F), context, NumberProvider.class);
+
+			return new ShrinkItemFunction(source, amountProvider);
+		}
+
 	}
 
 }

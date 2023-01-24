@@ -2,22 +2,21 @@ package highfox.inventoryactions.action.function;
 
 import java.util.Queue;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.UtilCodecs;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.IActionFunction;
+import highfox.inventoryactions.api.serialization.IDeserializer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.loot.providers.number.NumberProvider;
 
 public class GiveXpFunction implements IActionFunction {
-	public static final Codec<GiveXpFunction> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			UtilCodecs.NUMBER_PROVIDER_CODEC.fieldOf("amount").forGetter(o -> o.amountProvider),
-			Codec.BOOL.optionalFieldOf("add_levels", Boolean.valueOf(false)).forGetter(o -> o.addLevels)
-	).apply(instance, GiveXpFunction::new));
-
 	private final NumberProvider amountProvider;
 	private final boolean addLevels;
 
@@ -27,7 +26,7 @@ public class GiveXpFunction implements IActionFunction {
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
 		Player player = context.getPlayer();
 		int amount = this.amountProvider.getInt(context.getLootContext());
 
@@ -43,7 +42,24 @@ public class GiveXpFunction implements IActionFunction {
 
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.GIVE_XP.get();
+		return ActionFunctionTypes.GIVE_XP.get();
+	}
+
+	public static class Deserializer implements IDeserializer<GiveXpFunction> {
+
+		@Override
+		public GiveXpFunction fromJson(JsonObject json, JsonDeserializationContext context) {
+			NumberProvider amountProvider = GsonHelper.getAsObject(json, "amount", context, NumberProvider.class);
+			boolean addLevels = GsonHelper.getAsBoolean(json, "add_levels", false);
+
+			return new GiveXpFunction(amountProvider, addLevels);
+		}
+
+		@Override
+		public GiveXpFunction fromNetwork(FriendlyByteBuf buffer) {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 
 }

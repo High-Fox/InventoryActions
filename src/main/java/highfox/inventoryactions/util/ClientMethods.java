@@ -2,8 +2,8 @@ package highfox.inventoryactions.util;
 
 import com.google.common.collect.ImmutableMap;
 
-import highfox.inventoryactions.InventoryActions;
 import highfox.inventoryactions.action.InventoryAction;
+import highfox.inventoryactions.api.util.ActionsConstants;
 import highfox.inventoryactions.data.ActionsManager;
 import highfox.inventoryactions.network.message.SyncActionsMessage;
 import net.minecraft.client.Minecraft;
@@ -20,7 +20,7 @@ public class ClientMethods {
 	public static void syncActions(SyncActionsMessage msg) {
 		ImmutableMap<ResourceLocation, InventoryAction> actions = ImmutableMap.copyOf(msg.getActions());
 		ActionsManager.setActions(actions);
-		InventoryActions.LOG.debug("Loaded {} inventory actions from the server", actions.size());
+		ActionsConstants.LOG.debug("Loaded {} inventory actions from the server", actions.size());
 	}
 
 	public static GameType getClientGameMode() {

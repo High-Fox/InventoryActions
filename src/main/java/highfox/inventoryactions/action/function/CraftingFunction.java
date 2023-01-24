@@ -2,20 +2,28 @@ package highfox.inventoryactions.action.function;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.DataResult;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.util.UtilCodecs;
-import highfox.inventoryactions.util.UtilCodecs.SourceOrItem;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.IActionFunction;
+import highfox.inventoryactions.api.itemsource.SourceOrItem;
+import highfox.inventoryactions.api.serialization.IDeserializer;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.CraftingContainer;
@@ -25,11 +33,6 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
 public class CraftingFunction implements IActionFunction {
-	public static final Codec<CraftingFunction> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			Codec.STRING.listOf().flatXmap(checkPattern(), checkPattern()).fieldOf("pattern").forGetter(o -> o.pattern),
-			Codec.unboundedMap(Codec.STRING, UtilCodecs.SOURCE_OR_ITEM_CODEC).flatXmap(checkKey(), checkKey()).fieldOf("key").forGetter(o -> o.key)
-	).apply(instance, CraftingFunction::new));
-
 	private final List<String> pattern;
 	private final Map<String, SourceOrItem> key;
 
@@ -39,7 +42,7 @@ public class CraftingFunction implements IActionFunction {
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
 		int width = this.pattern.get(0).length();
 		int height = this.pattern.size();
 		CraftingContainer container = this.makeCraftingContainer(width, height);
@@ -57,7 +60,7 @@ public class CraftingFunction implements IActionFunction {
 					}
 
 					unusedKeys.remove(s);
-					container.setItem(j + width * i, value.get(context));
+					container.setItem(j + width * i, value.resolve(context));
 				}
 			}
 		}
@@ -93,32 +96,51 @@ public class CraftingFunction implements IActionFunction {
 		return container;
 	}
 
-	private static Function<List<String>, DataResult<List<String>>> checkPattern() {
-		return list -> {
-			if (list.isEmpty()) {
-				return DataResult.error("Crafting pattern must not be empty");
-			} else if (list.size() > 3) {
-				return DataResult.error("Crafting pattern must contain no more than 3 string elements");
-			} else if (list.stream().anyMatch(str -> str.length() > 3)) {
-				return DataResult.error("Crafting pattern strings must not be longer than 3 characters");
-			} else {
-				return DataResult.success(list);
-			}
-		};
-	}
-
-	private static Function<Map<String, SourceOrItem>, DataResult<Map<String, SourceOrItem>>> checkKey() {
-		return map -> {
-			if (map.keySet().stream().anyMatch(key -> key.length() > 1)) {
-				return DataResult.error("Crafting pattern keys can only be 1 character");
-			} else {
-				return DataResult.success(map);
-			}
-		};
-	}
-
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.CRAFTING.get();
+		return ActionFunctionTypes.CRAFTING.get();
+	}
+
+	public static class Deserializer implements IDeserializer<CraftingFunction> {
+
+		@Override
+		public CraftingFunction fromJson(JsonObject json, JsonDeserializationContext context) {
+			JsonArray patternArray = GsonHelper.getAsJsonArray(json, "pattern");
+			ImmutableList.Builder<String> patternBuilder = ImmutableList.builderWithExpectedSize(patternArray.size());
+			for (JsonElement element : patternArray) {
+				String patternElement = GsonHelper.convertToString(element, "pattern string");
+
+				if (patternElement.length() > 3) {
+					throw new JsonSyntaxException("Pattern string must be no more than 3 characters");
+				} else {
+					patternBuilder.add(patternElement);
+				}
+			}
+			List<String> pattern = patternBuilder.build();
+			if (pattern.isEmpty()) {
+				throw new JsonSyntaxException("Pattern must not be empty");
+			} else if (pattern.size() > 3) {
+				throw new JsonSyntaxException("Pattern must contain 3 or less strings");
+			}
+			JsonObject keyObject = GsonHelper.getAsJsonObject(json, "key");
+			ImmutableMap.Builder<String, SourceOrItem> keyBuilder = ImmutableMap.builderWithExpectedSize(keyObject.size());
+			for (Entry<String, JsonElement> entry : keyObject.entrySet()) {
+				String character = entry.getKey();
+				if (character.length() != 1 || character.isBlank()) {
+					throw new JsonSyntaxException("Key must contain exactly 1 character");
+				}
+
+				SourceOrItem sourceOrItem = SourceOrItem.fromJson(entry.getValue());
+				keyBuilder.put(character, sourceOrItem);
+			}
+
+			return new CraftingFunction(pattern, keyBuilder.build());
+		}
+
+		@Override
+		public CraftingFunction fromNetwork(FriendlyByteBuf buffer) {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 }

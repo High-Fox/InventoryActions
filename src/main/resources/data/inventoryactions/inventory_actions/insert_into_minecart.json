@@ -44,7 +44,7 @@
 		},
 		{
 			"type": "inventoryactions:play_sound",
-			"sound": "entity.item_frame.add_item",
+			"sound": "minecraft:entity.item_frame.add_item",
 			"category": "player"
 		}
 	]

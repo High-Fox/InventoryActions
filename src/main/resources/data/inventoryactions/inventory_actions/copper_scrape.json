@@ -19,6 +19,11 @@
 			"amount": 1
 		},
 		{
+			"type": "inventoryactions:damage_item",
+			"source": "action_using",
+			"amount": 1
+		},
+		{
 			"type": "inventoryactions:give_items",
 			"items": [
 				{

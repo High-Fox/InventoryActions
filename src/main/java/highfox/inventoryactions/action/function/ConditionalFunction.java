@@ -3,18 +3,19 @@ package highfox.inventoryactions.action.function;
 import java.util.List;
 import java.util.Queue;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.action.condition.IActionCondition;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.condition.IActionCondition;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.IActionFunction;
+import highfox.inventoryactions.api.serialization.IDeserializer;
+import highfox.inventoryactions.util.SerializationUtils;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.GsonHelper;
 
 public class ConditionalFunction implements IActionFunction {
-	public static final Codec<ConditionalFunction> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			IActionFunction.CODEC.fieldOf("function").forGetter(o -> o.function),
-			IActionCondition.CODEC.listOf().fieldOf("conditions").forGetter(o -> o.conditions)
-	).apply(instance, ConditionalFunction::new));
-
 	private final IActionFunction function;
 	private final List<IActionCondition> conditions;
 
@@ -24,7 +25,7 @@ public class ConditionalFunction implements IActionFunction {
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
 		if (this.conditions.stream().allMatch(condition -> condition.test(context))) {
 			this.function.run(workQueue, context);
 		}
@@ -32,7 +33,24 @@ public class ConditionalFunction implements IActionFunction {
 
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.CONDITIONAL.get();
+		return ActionFunctionTypes.CONDITIONAL.get();
+	}
+
+	public static class Deserializer implements IDeserializer<ConditionalFunction> {
+
+		@Override
+		public ConditionalFunction fromJson(JsonObject json, JsonDeserializationContext context) {
+			IActionFunction function = GsonHelper.getAsObject(json, "function", context, IActionFunction.class);
+			List<IActionCondition> conditions = context.deserialize(GsonHelper.getAsJsonArray(json, "conditions"), SerializationUtils.CONDITION_LIST_TYPE);
+
+			return new ConditionalFunction(function, conditions);
+		}
+
+		@Override
+		public ConditionalFunction fromNetwork(FriendlyByteBuf buffer) {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 
 }

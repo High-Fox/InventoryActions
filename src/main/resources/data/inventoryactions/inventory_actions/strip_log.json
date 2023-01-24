@@ -35,7 +35,7 @@
 		},
 		{
 			"type": "inventoryactions:play_sound",
-			"sound": "item.axe.strip",
+			"sound": "minecraft:item.axe.strip",
 			"category": "block"
 		}
 	]

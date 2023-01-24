@@ -3,20 +3,22 @@ package highfox.inventoryactions.action.function;
 import java.util.List;
 import java.util.Queue;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
 
-import highfox.inventoryactions.action.ActionContext;
-import highfox.inventoryactions.action.function.provider.IItemProvider;
+import highfox.inventoryactions.api.action.IActionContext;
+import highfox.inventoryactions.api.function.ActionFunctionType;
+import highfox.inventoryactions.api.function.IActionFunction;
+import highfox.inventoryactions.api.itemprovider.IItemProvider;
+import highfox.inventoryactions.api.serialization.IDeserializer;
+import highfox.inventoryactions.util.SerializationUtils;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public class GiveItemsFunction implements IActionFunction {
-	public static final Codec<GiveItemsFunction> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-			IItemProvider.CODEC.listOf().fieldOf("items").forGetter(o -> o.providers)
-	).apply(instance, GiveItemsFunction::new));
-
 	private final List<IItemProvider> providers;
 
 	public GiveItemsFunction(List<IItemProvider> providers) {
@@ -24,7 +26,7 @@ public class GiveItemsFunction implements IActionFunction {
 	}
 
 	@Override
-	public void run(Queue<Runnable> workQueue, ActionContext context) {
+	public void run(Queue<Runnable> workQueue, IActionContext context) {
 		ObjectArrayList<ItemStack> stacks = new ObjectArrayList<ItemStack>();
 
 		if (!context.getLevel().isClientSide()) {
@@ -37,10 +39,19 @@ public class GiveItemsFunction implements IActionFunction {
 			for (ItemStack stack : stacks) {
 				giveItem(stack, context);
 			}
+
+			if (!stacks.isEmpty()) {
+				Player player = context.getPlayer();
+				if (player.hasContainerOpen()) {
+					player.containerMenu.broadcastChanges();
+				} else {
+					player.inventoryMenu.broadcastChanges();
+				}
+			}
 		});
 	}
 
-	public static void giveItem(ItemStack stack, ActionContext context) {
+	public static void giveItem(ItemStack stack, IActionContext context) {
 		Player player = context.getPlayer();
 
 		if (!stack.isStackable() && (!context.getSlot().hasItem() || context.getUsing().isEmpty())) {
@@ -50,17 +61,28 @@ public class GiveItemsFunction implements IActionFunction {
 				player.containerMenu.setCarried(stack);
 			}
 		} else if (!player.addItem(stack)) {
-			if (player.hasContainerOpen()) {
-				player.containerMenu.broadcastChanges();
-			} else {
-				player.inventoryMenu.broadcastChanges();
-			}
 			player.drop(stack, false);
 		}
 	}
 
 	@Override
 	public ActionFunctionType getType() {
-		return ActionFunctionType.GIVE_ITEMS.get();
+		return ActionFunctionTypes.GIVE_ITEMS.get();
+	}
+
+	public static class Deserializer implements IDeserializer<GiveItemsFunction> {
+
+		@Override
+		public GiveItemsFunction fromJson(JsonObject json, JsonDeserializationContext context) {
+			List<IItemProvider> providers = context.deserialize(GsonHelper.getAsJsonArray(json, "items"), SerializationUtils.ITEM_PROVIDER_LIST_TYPE);
+
+			return new GiveItemsFunction(providers);
+		}
+
+		@Override
+		public GiveItemsFunction fromNetwork(FriendlyByteBuf buffer) {
+			throw new UnsupportedOperationException();
+		}
+
 	}
 }

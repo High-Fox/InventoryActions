@@ -48,7 +48,7 @@
 		},
 		{
 			"type": "inventoryactions:play_sound",
-			"sound": "block.pumpkin.carve",
+			"sound": "minecraft:block.pumpkin.carve",
 			"category": "block"
 		}
 	]

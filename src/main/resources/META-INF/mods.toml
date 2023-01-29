@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[44,)"
+loaderVersion="[43,)"
 issueTrackerURL="https://github.com/High-Fox/InventoryActions/issues"
 license="MIT License"
 
@@ -17,13 +17,13 @@ license="MIT License"
 [[dependencies.inventoryactions]]
     modId="forge"
     mandatory=true
-    versionRange="[44,)"
+    versionRange="[43,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.inventoryactions]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.19.3]"
+    versionRange="[1.19.2]"
     ordering="NONE"
     side="BOTH"

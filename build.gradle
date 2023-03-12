@@ -29,6 +29,18 @@ minecraft {
                 }
             }
     	}
+    	
+    	server {
+    		workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            
+            mods {
+                inventoryactions {
+                    source sourceSets.main
+                }
+            }
+    	}
         
         data {
         	workingDirectory project.file('run')

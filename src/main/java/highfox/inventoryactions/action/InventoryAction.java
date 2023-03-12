@@ -74,22 +74,19 @@ public class InventoryAction {
 	}
 
 	public void toNetwork(FriendlyByteBuf buffer) {
-		buffer.writeVarInt(this.conditions.size());
-		for (IActionCondition condition : this.conditions) {
-			buffer.writeResourceLocation(ActionConditionTypes.getRegistryName(condition.getType()));
-			condition.toNetwork(buffer);
-		}
+		buffer.writeCollection(this.conditions, (buf, condition) -> {
+			buf.writeResourceLocation(ActionConditionTypes.getRegistryName(condition.getType()));
+			condition.toNetwork(buf);
+		});
 	}
 
 	public static InventoryAction fromNetwork(FriendlyByteBuf buffer) {
-		int size = buffer.readVarInt();
-		ImmutableList.Builder<IActionCondition> builder = ImmutableList.builderWithExpectedSize(size);
-		for (int i = 0; i < size; i++) {
+		List<IActionCondition> conditions = buffer.readList(buf -> {
 			ActionConditionType type = ActionConditionTypes.CONDITION_SERIALIZERS.get().getValue(buffer.readResourceLocation());
-			builder.add(type.getDeserializer().fromNetwork(buffer));
-		}
+			return type.getDeserializer().fromNetwork(buf);
+		});
 
-		return new InventoryAction(builder.build(), new IActionFunction[0]);
+		return new InventoryAction(ImmutableList.copyOf(conditions), new IActionFunction[0]);
 	}
 
 	public static class Deserializer implements JsonDeserializer<InventoryAction> {

@@ -12,7 +12,7 @@
 			]
 		},
 		{
-			"_comment": "Checks if the held item is a tool, armor piece or book. If it is a book, it also checks that there is a maximum of 1",
+			"_comment": "Checks if the held item is a tool, armor piece or book. If it is a book, it also checks that there is only 1",
 			
 			"type": "inventoryactions:or",
 			"conditions": [
@@ -38,7 +38,7 @@
 							"type": "inventoryactions:item_nbt",
 							"source": "action_using",
 							"nbt": {
-								"Count": "<2"
+								"Count": 1
 							}
 						}
 					]

@@ -4,6 +4,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 
 public interface IMessage {
-	void write(FriendlyByteBuf buf);
+	void write(FriendlyByteBuf buffer);
 	void handle(NetworkEvent.Context context);
 }

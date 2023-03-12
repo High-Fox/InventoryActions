@@ -2,8 +2,8 @@ package highfox.inventoryactions.network.message;
 
 import java.util.Map;
 
+import highfox.inventoryactions.InventoryActionsClient;
 import highfox.inventoryactions.action.InventoryAction;
-import highfox.inventoryactions.util.ClientMethods;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
@@ -17,22 +17,22 @@ public class SyncActionsMessage implements IMessage {
 		this.actions = actions;
 	}
 
-	public SyncActionsMessage(FriendlyByteBuf buf) {
-		Map<ResourceLocation, InventoryAction> map = buf.readMap(FriendlyByteBuf::readResourceLocation, InventoryAction::fromNetwork);
+	public SyncActionsMessage(FriendlyByteBuf buffer) {
+		Map<ResourceLocation, InventoryAction> map = buffer.readMap(FriendlyByteBuf::readResourceLocation, InventoryAction::fromNetwork);
 		this.actions = map;
 	}
 
 	@Override
-	public void write(FriendlyByteBuf buf) {
-		buf.writeMap(this.actions, FriendlyByteBuf::writeResourceLocation, (buffer, action) -> {
-			action.toNetwork(buffer);
+	public void write(FriendlyByteBuf buffer) {
+		buffer.writeMap(this.actions, FriendlyByteBuf::writeResourceLocation, (buf, action) -> {
+			action.toNetwork(buf);
 		});
 	}
 
 	@Override
 	public void handle(Context context) {
 		context.enqueueWork(() -> {
-			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> ClientMethods.syncActions(this));
+			DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> InventoryActionsClient.syncActions(this));
 		});
 
 		context.setPacketHandled(true);

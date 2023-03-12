@@ -26,7 +26,7 @@ public class ItemNbtCondition extends ItemSourcingCondition {
 	public boolean test(IActionContext context) {
 		ItemStack stack = this.source.get(context);
 		CompoundTag itemNbt = stack.hasTag() ? stack.getTag() : new CompoundTag();
-		itemNbt.putByte("Count", (byte)stack.getCount());
+		itemNbt.putInt("Count", stack.getCount());
 
 		return NbtUtils.compareNbt(this.nbt, itemNbt);
 	}

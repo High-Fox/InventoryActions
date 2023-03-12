@@ -37,9 +37,9 @@ public class ActionsNetwork {
 	private static <T extends IMessage> void registerMessage(Class<T> clazz, NetworkDirection direction) {
 		BiConsumer<T, FriendlyByteBuf> encoder = T::write;
 
-		Function<FriendlyByteBuf, T> decoder = buf -> {
+		Function<FriendlyByteBuf, T> decoder = buffer -> {
 			try {
-				T instance = clazz.getConstructor(FriendlyByteBuf.class).newInstance(buf);
+				T instance = clazz.getConstructor(FriendlyByteBuf.class).newInstance(buffer);
 				return instance;
 			} catch (ReflectiveOperationException e) {
 				throw new RuntimeException("Error creating new " + clazz.getSimpleName() + " instance: " + e.getMessage());

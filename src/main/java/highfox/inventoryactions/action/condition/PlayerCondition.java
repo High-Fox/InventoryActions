@@ -5,11 +5,11 @@ import java.util.Optional;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 
+import highfox.inventoryactions.InventoryActionsClient;
 import highfox.inventoryactions.api.action.IActionContext;
 import highfox.inventoryactions.api.condition.ActionConditionType;
 import highfox.inventoryactions.api.condition.IActionCondition;
 import highfox.inventoryactions.api.serialization.IDeserializer;
-import highfox.inventoryactions.util.ClientMethods;
 import highfox.inventoryactions.util.NbtUtils;
 import highfox.inventoryactions.util.SerializationUtils;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -54,7 +54,7 @@ public class PlayerCondition implements IActionCondition {
 			if (player instanceof ServerPlayer) {
 				gameType = ((ServerPlayer) player).gameMode.getGameModeForPlayer();
 			} else {
-				gameType = DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> ClientMethods::getClientGameMode);
+				gameType = DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> InventoryActionsClient::getClientGameMode);
 			}
 
 			if (gameType != null && gameType != this.gameMode.get()) {
@@ -108,7 +108,7 @@ public class PlayerCondition implements IActionCondition {
 		public PlayerCondition fromNetwork(FriendlyByteBuf buffer) {
 			Optional<ResourceKey<Level>> dimension = buffer.readOptional(buf -> buf.readResourceKey(Registries.DIMENSION));
 			Optional<GameType> gameMode = buffer.readOptional(buf -> buf.readEnum(GameType.class));
-			Optional<MinMaxBounds.Ints> experienceLevel = buffer.readOptional(buf -> MinMaxBounds.Ints.between(buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null), buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null)));
+			Optional<MinMaxBounds.Ints> experienceLevel = buffer.readOptional(buf -> new MinMaxBounds.Ints(buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null), buf.readOptional(buf0 -> buf0.readVarInt()).orElse(null)));
 			Optional<CompoundTag> nbt = buffer.readOptional(buf -> buf.readAnySizeNbt());
 
 			return new PlayerCondition(dimension, gameMode, experienceLevel, nbt);
